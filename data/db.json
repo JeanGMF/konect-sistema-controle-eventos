@@ -1,0 +1,139 @@
+{
+  "users": [
+    {
+      "id": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "nome": "te",
+      "sobrenome": "te",
+      "email": "te@br.com",
+      "cpf": "111",
+      "salt": "8d37b0c21ebae1aeb4fc51538a89f4b7",
+      "passwordHash": "46b0c33264e4a3f1cc657b10eb33f1457f5430ffd1be6b04a1adf125c3da8fcc2176c0897305e8e715bee816c9bde7cd5f3a41cddce7f9b4050c417d3d1886eb",
+      "createdAt": "2026-06-10T03:03:02.941Z"
+    }
+  ],
+  "sessions": [
+    {
+      "token": "cf006d4293be203cefdac136ee9372a5d0f57489d3d3d5df9000153d8cca60c1886259742ab869395978c1bdddcf0d1b",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "createdAt": "2026-06-10T23:56:38.995Z",
+      "expiresAt": "2026-06-11T07:56:38.995Z"
+    },
+    {
+      "token": "528b2f3a21ed0a098e307e88b7a72bd5b2125d518e3ac75de30855386dcd3cb782fa0996ac66f54eb5f01a2684906a91",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "createdAt": "2026-06-11T00:05:45.737Z",
+      "expiresAt": "2026-06-11T08:05:45.737Z"
+    }
+  ],
+  "events": [],
+  "notifications": [
+    {
+      "id": "notification_e68303bd-c79e-4175-8e51-6a8912555188",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "title": "Relatório gerado",
+      "message": "O relatório de eventos em Excel foi gerado.",
+      "type": "relatorio",
+      "read": false,
+      "createdAt": "2026-06-11T00:06:07.837Z"
+    },
+    {
+      "id": "notification_22d79f44-ef2e-4221-9f32-004f03e43cd3",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "title": "Relatório gerado",
+      "message": "O relatório de eventos em PDF foi gerado.",
+      "type": "relatorio",
+      "read": false,
+      "createdAt": "2026-06-11T00:06:00.799Z"
+    },
+    {
+      "id": "notification_aea11223-92d0-4dc6-a9f3-a14023438cca",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "title": "Evento excluído",
+      "message": "Um evento foi removido do sistema.",
+      "type": "evento",
+      "read": true,
+      "createdAt": "2026-06-10T23:59:51.136Z"
+    },
+    {
+      "id": "notification_5ecf3a0d-5ba7-457e-a297-bca538cb2533",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "title": "Evento excluído",
+      "message": "Um evento foi removido do sistema.",
+      "type": "evento",
+      "read": true,
+      "createdAt": "2026-06-10T23:59:49.570Z"
+    },
+    {
+      "id": "notification_8c17f2eb-9ebf-4fdc-aa7a-c1ee22ac061f",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "title": "Evento atualizado",
+      "message": "O evento 13 foi atualizado com sucesso.",
+      "type": "evento",
+      "read": true,
+      "createdAt": "2026-06-10T23:59:25.540Z"
+    },
+    {
+      "id": "notification_8db3b3c5-3e0a-488a-a168-5e6d5903c86b",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "title": "Evento atualizado",
+      "message": "O evento 12 foi atualizado com sucesso.",
+      "type": "evento",
+      "read": true,
+      "createdAt": "2026-06-10T23:59:15.228Z"
+    },
+    {
+      "id": "notification_3b9dd5a3-50a9-4fbb-9748-2eec4a235dde",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "title": "Evento criado",
+      "message": "O evento 13 foi cadastrado com sucesso.",
+      "type": "evento",
+      "read": true,
+      "createdAt": "2026-06-10T23:58:31.023Z"
+    },
+    {
+      "id": "notification_26d011fc-e30e-430f-8004-1618efd6c14a",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "title": "Evento criado",
+      "message": "O evento 12 foi cadastrado com sucesso.",
+      "type": "evento",
+      "read": false,
+      "createdAt": "2026-06-10T23:58:19.124Z"
+    },
+    {
+      "id": "notification_4938e184-fb0e-4d46-9c74-b8c252d8833a",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "title": "Evento excluído",
+      "message": "Um evento foi removido do sistema.",
+      "type": "evento",
+      "read": false,
+      "createdAt": "2026-06-10T23:57:42.711Z"
+    },
+    {
+      "id": "notification_a8592dd0-291e-48a8-9268-11b11572f60a",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "title": "Evento excluído",
+      "message": "Um evento foi removido do sistema.",
+      "type": "evento",
+      "read": false,
+      "createdAt": "2026-06-10T23:57:40.591Z"
+    },
+    {
+      "id": "notification_0f0bd616-b204-418d-bfa9-7ca428d35933",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "title": "Evento criado",
+      "message": "O evento 12 foi cadastrado com sucesso.",
+      "type": "evento",
+      "read": false,
+      "createdAt": "2026-06-10T23:57:02.730Z"
+    },
+    {
+      "id": "notification_b49d8ef6-fabd-486e-b120-19e541ec62c9",
+      "userId": "user_94393c10-7aca-4862-92ec-4047e27fde9a",
+      "title": "Evento criado",
+      "message": "O evento evento foi cadastrado com sucesso.",
+      "type": "evento",
+      "read": false,
+      "createdAt": "2026-06-10T03:16:12.237Z"
+    }
+  ]
+}

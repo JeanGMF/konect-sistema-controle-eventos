@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KONECT | Cadastro</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="auth-page">
+  <section class="auth-card">
+    <div class="brand">
+      <div class="brand-icon">✦</div>
+      <div class="brand-name">KONECT</div>
+    </div>
+
+    <h1>Cadastro</h1>
+    <p>Crie sua conta para começar a organizar seus eventos.</p>
+
+    <form id="registerForm" class="form-grid">
+      <div class="two-columns">
+        <div>
+          <label for="nome">Nome</label>
+          <input type="text" id="nome" name="nome" placeholder="Digite seu nome" required>
+        </div>
+        <div>
+          <label for="sobrenome">Sobrenome</label>
+          <input type="text" id="sobrenome" name="sobrenome" placeholder="Digite seu sobrenome" required>
+        </div>
+      </div>
+
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required>
+
+      <label for="cpf">CPF</label>
+      <input type="text" id="cpf" name="cpf" placeholder="Digite seu CPF" required>
+
+      <div class="two-columns">
+        <div>
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" name="senha" placeholder="Mínimo de 6 caracteres" required>
+        </div>
+        <div>
+          <label for="confirmarSenha">Confirmar senha</label>
+          <input type="password" id="confirmarSenha" name="confirmarSenha" placeholder="Confirme sua senha" required>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="index.html">Voltar ao login</a>
+        <button type="submit">CRIAR CONTA</button>
+      </div>
+    </form>
+
+    <div id="formMessage" class="message"></div>
+  </section>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

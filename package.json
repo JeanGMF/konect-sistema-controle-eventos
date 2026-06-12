@@ -1,0 +1,16 @@
+{
+  "name": "konect-sistema-controle-eventos",
+  "version": "1.0.0",
+  "description": "Sistema de Controle de Eventos com backend Node.js e frontend funcional",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": ["eventos", "backend", "node", "express"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

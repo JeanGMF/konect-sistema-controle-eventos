@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KONECT | Painel</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">✦</div>
+        <div class="brand-name">KONECT</div>
+      </div>
+      <div class="topbar-actions">
+        <span id="userName" class="user-pill">Carregando...</span>
+        <button id="logoutBtn" class="secondary">Sair</button>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <section class="hero-panel">
+        <div class="hero-copy">
+          <h1>Gerencie seus eventos com inteligência</h1>
+          <p>Cadastre eventos, defina data, local, capacidade e acompanhe as inscrições em um único painel funcional conectado ao backend.</p>
+          <button id="newEventBtn">Novo evento</button>
+        </div>
+        <div class="quick-panel">
+          <h2>Resumo geral</h2>
+          <p>Os números abaixo são calculados automaticamente com base nos eventos cadastrados.</p>
+
+          <div class="quick-actions">
+            <button type="button" id="reportPdfBtn">Baixar PDF</button>
+            <button type="button" id="reportExcelBtn" class="secondary">Baixar Excel</button>
+          </div>
+          <div id="reportMessage" class="message"></div>
+
+          <div class="notifications-box">
+            <h3>Notificações</h3>
+            <div id="notificationList" class="notification-list">Carregando notificações...</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat-card"><span id="statEvents" class="stat-value">0</span><span class="stat-label">Eventos</span></div>
+        <div class="stat-card"><span id="statGuests" class="stat-value">0</span><span class="stat-label">Participantes</span></div>
+        <div class="stat-card"><span id="statTasks" class="stat-value">0</span><span class="stat-label">Tarefas concluídas</span></div>
+        <div class="stat-card"><span id="statBudget" class="stat-value">R$ 0,00</span><span class="stat-label">Orçamento total</span></div>
+      </section>
+
+      <section class="content-grid">
+        <aside>
+          <div class="card" id="eventFormCard">
+            <h2 id="eventFormTitle">Cadastrar evento</h2>
+            <form id="eventForm" class="form-grid">
+              <input type="hidden" name="id" id="eventId">
+
+              <label for="title">Nome do evento</label>
+              <input type="text" id="title" name="title" placeholder="Ex.: Formatura 2026" required>
+
+              <div class="two-columns">
+                <div>
+                  <label for="date">Data</label>
+                  <input type="date" id="date" name="date" required>
+                </div>
+                <div>
+                  <label for="time">Horário</label>
+                  <input type="time" id="time" name="time">
+                </div>
+              </div>
+
+              <label for="location">Local</label>
+              <input type="text" id="location" name="location" placeholder="Ex.: Centro de Convenções" required>
+
+              <div class="two-columns">
+                <div>
+                  <label for="capacity">Capacidade máxima</label>
+                  <input type="number" id="capacity" name="capacity" placeholder="Ex.: 100" min="1" step="1" required>
+                </div>
+                <div>
+                  <label for="budget">Orçamento</label>
+                  <input type="number" id="budget" name="budget" placeholder="0.00" min="0" step="0.01">
+                </div>
+              </div>
+
+              <div class="two-columns">
+                <div>
+                  <label for="type">Tipo</label>
+                  <select id="type" name="type">
+                    <option>Social</option>
+                    <option>Acadêmico</option>
+                    <option>Corporativo</option>
+                    <option>Cultural</option>
+                    <option>Esportivo</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="status">Status</label>
+                  <select id="status" name="status">
+                    <option>Planejamento</option>
+                    <option>Ativo</option>
+                    <option>Concluído</option>
+                    <option>Cancelado</option>
+                  </select>
+                </div>
+              </div>
+
+
+              <label for="description">Descrição</label>
+              <textarea id="description" name="description" rows="3" placeholder="Detalhes importantes do evento"></textarea>
+
+              <div class="form-actions">
+                <button type="button" id="cancelEditBtn" class="secondary">Limpar</button>
+                <button type="submit">Salvar evento</button>
+              </div>
+            </form>
+            <div id="eventMessage" class="message"></div>
+          </div>
+
+          <div class="card">
+            <h2>Meus eventos</h2>
+            <div id="eventList" class="event-list"></div>
+          </div>
+        </aside>
+
+        <section id="detailsArea" class="card">
+          <div class="detail-empty">Selecione um evento para abrir o painel de controle.</div>
+        </section>
+      </section>
+    </main>
+
+    <footer>© 2026 KONECT. Sistema acadêmico funcional.</footer>
+  </div>
+
+  <template id="detailsTemplate">
+    <div class="detail-header">
+      <div>
+        <h2 data-field="title"></h2>
+        <div class="event-meta" data-field="meta"></div>
+      </div>
+      <span class="badge" data-field="status"></span>
+    </div>
+
+    <div class="mini-stats">
+      <div class="mini-stat"><strong data-field="participants">0</strong><span>Participantes</span></div>
+      <div class="mini-stat"><strong data-field="capacity">0</strong><span>Capacidade</span></div>
+      <div class="mini-stat"><strong data-field="availableSlots">0</strong><span>Vagas livres</span></div>
+      <div class="mini-stat"><strong data-field="balance">R$ 0,00</strong><span>Saldo</span></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="guests">Participantes</button>
+      <button class="tab-btn" data-tab="suppliers">Fornecedores</button>
+      <button class="tab-btn" data-tab="tasks">Tarefas</button>
+      <button class="tab-btn" data-tab="finances">Financeiro</button>
+    </div>
+
+    <div id="tabContent"></div>
+  </template>
+
+  <script src="js/api.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
