@@ -7,6 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_PATH = path.join(__dirname, 'data', 'db.json');
 const PUBLIC_PATH = path.join(__dirname, 'public');
+const PHONE_ERROR_MESSAGE = 'O telefone deve conter apenas números e ter entre 10 e 11 dígitos.';
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -64,6 +65,10 @@ function required(value) {
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email));
+}
+
+function isValidParticipantPhone(phone) {
+  return /^\d{10,11}$/.test(String(phone || ''));
 }
 
 function createId(prefix) {
@@ -171,11 +176,12 @@ function findUserEvent(db, userId, eventId) {
 
 
 function addNotification(db, userId, title, message, type = 'sistema') {
+  db.notifications = Array.isArray(db.notifications) ? db.notifications : [];
   db.notifications.unshift({
     id: createId('notification'),
     userId,
-    title,
-    message,
+    title: String(title || 'Notificação').trim(),
+    message: String(message || '').trim(),
     type,
     read: false,
     createdAt: new Date().toISOString()
@@ -262,41 +268,223 @@ function buildExcelReport(events, user) {
 </Workbook>`;
 }
 
-function chunkLines(lines, maxPerPage = 38) {
-  const pages = [];
-  for (let index = 0; index < lines.length; index += maxPerPage) {
-    pages.push(lines.slice(index, index + maxPerPage));
-  }
-  return pages.length ? pages : [[]];
-}
-
 function buildPdfReport(events, user) {
-  const lines = [
-    'KONECT - Relatorio de Eventos',
-    `Gerado por: ${user.nome} ${user.sobrenome}`,
-    `Data de emissao: ${new Date().toLocaleString('pt-BR')}`,
-    '',
-    `Total de eventos: ${events.length}`,
-    `Total de participantes ativos: ${events.reduce((total, event) => total + event.summary.totalParticipants, 0)}`,
-    ''
-  ];
+  const pageWidth = 612;
+  const pageHeight = 842;
+  const marginX = 44;
+  const contentWidth = pageWidth - marginX * 2;
+  const contentTop = 724;
+  const footerTop = 58;
+  const issuedAt = new Date().toLocaleString('pt-BR');
+  const pages = [];
+  let currentPage = null;
+
+  const number = (value) => Number(value).toFixed(2).replace(/\.?0+$/, '');
+  const estimateChars = (width, fontSize) => Math.max(8, Math.floor(width / (fontSize * 0.52)));
+
+  function textCommand(x, y, text, size = 10, font = 'F1', color = '0.13 0.12 0.18') {
+    return [
+      `${color} rg`,
+      'BT',
+      `/${font} ${size} Tf`,
+      `${number(x)} ${number(y)} Td`,
+      `(${pdfSafe(text)}) Tj`,
+      'ET'
+    ].join('\n');
+  }
+
+  function wrapText(value, width, fontSize = 10) {
+    const maxChars = estimateChars(width, fontSize);
+    const paragraphs = String(value ?? '-').split(/\r?\n/);
+    const lines = [];
+
+    paragraphs.forEach((paragraph) => {
+      const words = paragraph.trim().split(/\s+/).filter(Boolean);
+      if (!words.length) {
+        lines.push('');
+        return;
+      }
+
+      let line = '';
+      words.forEach((word) => {
+        let remaining = word;
+        while (remaining.length > maxChars) {
+          if (line) {
+            lines.push(line);
+            line = '';
+          }
+          lines.push(remaining.slice(0, maxChars));
+          remaining = remaining.slice(maxChars);
+        }
+
+        const candidate = line ? `${line} ${remaining}` : remaining;
+        if (candidate.length > maxChars) {
+          if (line) lines.push(line);
+          line = remaining;
+        } else {
+          line = candidate;
+        }
+      });
+
+      if (line) lines.push(line);
+    });
+
+    return lines.length ? lines : ['-'];
+  }
+
+  function headerCommands() {
+    return [
+      '0.96 0.94 0.99 rg',
+      `0 766 ${pageWidth} 76 re f`,
+      '0.34 0.16 0.62 rg',
+      '44 785 48 38 re f',
+      textCommand(58, 797, 'K', 20, 'F2', '1 1 1'),
+      textCommand(106, 810, 'KONECT', 18, 'F2', '0.18 0.09 0.34'),
+      textCommand(106, 792, 'Relatorio de Eventos', 13, 'F2', '0.31 0.24 0.42'),
+      textCommand(390, 810, `Emitido em: ${issuedAt}`, 9, 'F1', '0.31 0.24 0.42'),
+      textCommand(390, 794, `Usuario: ${user.nome} ${user.sobrenome}`, 9, 'F1', '0.31 0.24 0.42'),
+      '0.80 0.74 0.88 RG',
+      '44 766 m 568 766 l S'
+    ];
+  }
+
+  function footerCommands(pageNumber, totalPages) {
+    return [
+      '0.80 0.74 0.88 RG',
+      '44 52 m 568 52 l S',
+      textCommand(44, 34, 'KONECT - Sistema de Controle de Eventos', 9, 'F1', '0.36 0.30 0.44'),
+      textCommand(500, 34, `Pagina ${pageNumber} de ${totalPages}`, 9, 'F1', '0.36 0.30 0.44')
+    ];
+  }
+
+  function addPage() {
+    currentPage = {
+      y: contentTop,
+      commands: headerCommands()
+    };
+    pages.push(currentPage);
+  }
+
+  function ensureSpace(height) {
+    if (!currentPage) addPage();
+    if (currentPage.y - height < footerTop) addPage();
+  }
+
+  function drawSummary() {
+    const totalParticipants = events.reduce((total, event) => total + event.summary.totalParticipants, 0);
+    ensureSpace(62);
+    const top = currentPage.y;
+    currentPage.commands.push(
+      '0.98 0.98 1 rg',
+      `${marginX} ${number(top - 58)} ${contentWidth} 58 re f`,
+      '0.82 0.78 0.88 RG',
+      `${marginX} ${number(top - 58)} ${contentWidth} 58 re S`,
+      textCommand(marginX + 16, top - 22, `Total de eventos: ${events.length}`, 11, 'F2'),
+      textCommand(marginX + 190, top - 22, `Participantes ativos: ${totalParticipants}`, 11, 'F2'),
+      textCommand(marginX + 16, top - 42, 'Relatorio organizado por data do evento.', 9, 'F1', '0.36 0.30 0.44')
+    );
+    currentPage.y -= 78;
+  }
+
+  function renderEventBlock(event, index, descriptionLines, isContinuation = false, includeMeta = true) {
+    const titleLines = wrapText(`${index + 1}. ${event.title}${isContinuation ? ' (continuacao)' : ''}`, contentWidth - 28, 12);
+    const metaLines = includeMeta ? [
+      `Data: ${formatReportDate(event.date)} ${event.time || ''}    Local: ${event.location}`,
+      `Capacidade: ${event.summary.capacity}    Inscritos: ${event.summary.totalParticipants}    Vagas livres: ${event.summary.availableSlots}`,
+      `Status: ${event.status}    Tipo: ${event.type}    Orcamento: R$ ${Number(event.budget || 0).toFixed(2)}`
+    ].flatMap((line) => wrapText(line, contentWidth - 28, 9)) : [];
+    const hasDescription = descriptionLines.length > 0;
+    const height = 28 + titleLines.length * 14 + metaLines.length * 12 + (hasDescription ? 19 + descriptionLines.length * 12 : 0);
+
+    ensureSpace(height + 12);
+
+    const top = currentPage.y;
+    const bottom = top - height;
+    currentPage.commands.push(
+      '0.995 0.995 1 rg',
+      `${marginX} ${number(bottom)} ${contentWidth} ${number(height)} re f`,
+      '0.83 0.80 0.90 RG',
+      `${marginX} ${number(bottom)} ${contentWidth} ${number(height)} re S`,
+      '0.34 0.16 0.62 rg',
+      `${marginX} ${number(top - 5)} ${contentWidth} 5 re f`
+    );
+
+    let y = top - 22;
+    titleLines.forEach((line) => {
+      currentPage.commands.push(textCommand(marginX + 14, y, line, 12, 'F2', '0.18 0.09 0.34'));
+      y -= 14;
+    });
+
+    metaLines.forEach((line) => {
+      currentPage.commands.push(textCommand(marginX + 14, y, line, 9, 'F1', '0.24 0.20 0.31'));
+      y -= 12;
+    });
+
+    if (hasDescription) {
+      y -= 4;
+      currentPage.commands.push(textCommand(marginX + 14, y, 'Descricao', 9, 'F2', '0.18 0.09 0.34'));
+      y -= 13;
+      descriptionLines.forEach((line) => {
+        currentPage.commands.push(textCommand(marginX + 14, y, line, 9, 'F1', '0.24 0.20 0.31'));
+        y -= 12;
+      });
+    }
+
+    currentPage.y = bottom - 14;
+  }
+
+  function eventBaseHeight(event, index, isContinuation, includeMeta, hasDescription) {
+    const titleLines = wrapText(`${index + 1}. ${event.title}${isContinuation ? ' (continuacao)' : ''}`, contentWidth - 28, 12);
+    const metaLines = includeMeta ? [
+      `Data: ${formatReportDate(event.date)} ${event.time || ''}    Local: ${event.location}`,
+      `Capacidade: ${event.summary.capacity}    Inscritos: ${event.summary.totalParticipants}    Vagas livres: ${event.summary.availableSlots}`,
+      `Status: ${event.status}    Tipo: ${event.type}    Orcamento: R$ ${Number(event.budget || 0).toFixed(2)}`
+    ].flatMap((line) => wrapText(line, contentWidth - 28, 9)) : [];
+
+    return 28 + titleLines.length * 14 + metaLines.length * 12 + (hasDescription ? 19 : 0);
+  }
+
+  function drawEvent(event, index) {
+    const description = event.description ? wrapText(event.description, contentWidth - 28, 9) : [];
+    let remainingDescription = [...description];
+    let firstBlock = true;
+
+    do {
+      const isContinuation = !firstBlock;
+      const includeMeta = firstBlock;
+      let baseHeight = eventBaseHeight(event, index, isContinuation, includeMeta, remainingDescription.length > 0);
+      ensureSpace(baseHeight + 24);
+
+      let availableDescriptionLines = Math.floor((currentPage.y - footerTop - baseHeight - 12) / 12);
+      if (remainingDescription.length && availableDescriptionLines < 1) {
+        addPage();
+        baseHeight = eventBaseHeight(event, index, isContinuation, includeMeta, true);
+        availableDescriptionLines = Math.floor((currentPage.y - footerTop - baseHeight - 12) / 12);
+      }
+
+      const maxLines = remainingDescription.length ? Math.max(1, availableDescriptionLines) : 0;
+      const chunk = remainingDescription.splice(0, maxLines);
+      renderEventBlock(event, index, chunk, isContinuation, includeMeta);
+      firstBlock = false;
+    } while (remainingDescription.length);
+  }
+
+  addPage();
+  drawSummary();
 
   if (!events.length) {
-    lines.push('Nenhum evento cadastrado.');
+    renderEventBlock({ title: 'Nenhum evento cadastrado.', date: '', time: '', location: '-', summary: { capacity: 0, totalParticipants: 0, availableSlots: 0 }, status: '-', type: '-', budget: 0 }, 0, [], false, false);
+  } else {
+    events.forEach((event, index) => drawEvent(event, index));
   }
 
-  events.forEach((event, index) => {
-    lines.push(`${index + 1}. ${event.title}`);
-    lines.push(`Data: ${formatReportDate(event.date)} ${event.time || ''} | Local: ${event.location}`);
-    lines.push(`Capacidade: ${event.summary.capacity} | Inscritos: ${event.summary.totalParticipants} | Vagas livres: ${event.summary.availableSlots}`);
-    lines.push(`Status: ${event.status} | Tipo: ${event.type} | Orcamento: R$ ${Number(event.budget || 0).toFixed(2)}`);
-    if (event.description) lines.push(`Descricao: ${event.description}`);
-    lines.push('');
-  });
-
-  const pageLines = chunkLines(lines);
+  const pageLines = pages.map((page, index) => [
+    ...page.commands,
+    ...footerCommands(index + 1, pages.length)
+  ]);
   const objects = [];
   const fontObjNum = 3 + (pageLines.length * 2);
+  const boldFontObjNum = fontObjNum + 1;
   const pageObjNums = [];
 
   objects[0] = '<< /Type /Catalog /Pages 2 0 R >>';
@@ -306,21 +494,15 @@ function buildPdfReport(events, user) {
     const contentObjNum = pageObjNum + 1;
     pageObjNums.push(pageObjNum);
 
-    const text = [
-      'BT',
-      '/F1 12 Tf',
-      '50 790 Td',
-      '14 TL',
-      ...page.map((line, lineIndex) => `${lineIndex === 0 ? '' : 'T* ' }(${pdfSafe(line).slice(0, 105)}) Tj`),
-      'ET'
-    ].join('\n');
+    const text = page.join('\n');
 
-    objects[pageObjNum - 1] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 ${fontObjNum} 0 R >> >> /Contents ${contentObjNum} 0 R >>`;
+    objects[pageObjNum - 1] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 ${fontObjNum} 0 R /F2 ${boldFontObjNum} 0 R >> >> /Contents ${contentObjNum} 0 R >>`;
     objects[contentObjNum - 1] = `<< /Length ${Buffer.byteLength(text, 'utf8')} >>\nstream\n${text}\nendstream`;
   });
 
   objects[1] = `<< /Type /Pages /Kids [${pageObjNums.map((num) => `${num} 0 R`).join(' ')}] /Count ${pageLines.length} >>`;
   objects[fontObjNum - 1] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+  objects[boldFontObjNum - 1] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>';
 
   let pdf = '%PDF-1.4\n';
   const offsets = [0];
@@ -569,6 +751,10 @@ function nestedRoute(collectionName, createItem) {
         return res.status(400).json({ message: 'Informe o nome do participante.' });
       }
 
+      if (!isValidParticipantPhone(req.body.phone)) {
+        return res.status(400).json({ message: PHONE_ERROR_MESSAGE });
+      }
+
       const capacity = Number(event.capacity || 1);
       const activeParticipants = event.guests.filter((guest) => guest.status !== 'Cancelado').length;
       if (activeParticipants >= capacity) {
@@ -608,6 +794,10 @@ function nestedRoute(collectionName, createItem) {
       const willBeActive = nextStatus !== 'Cancelado';
       const capacity = Number(event.capacity || 1);
       const activeParticipants = event.guests.filter((guest) => guest.id !== currentGuest.id && guest.status !== 'Cancelado').length;
+
+      if (willBeActive && req.body.phone !== undefined && !isValidParticipantPhone(req.body.phone)) {
+        return res.status(400).json({ message: PHONE_ERROR_MESSAGE });
+      }
 
       if (willBeActive && activeParticipants >= capacity) {
         return res.status(400).json({ message: 'Não há vagas disponíveis para reativar esta inscrição.' });
@@ -685,11 +875,12 @@ nestedRoute('finances', (body, id = createId('finance')) => ({
 
 app.get('/api/notifications', auth, (req, res) => {
   const db = readDB();
-  const notifications = db.notifications
+  const userNotifications = db.notifications
     .filter((notification) => notification.userId === req.user.id)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 20);
-  res.json({ notifications, unread: notifications.filter((notification) => !notification.read).length });
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const unread = userNotifications.filter((notification) => !notification.read).length;
+  res.json({ notifications: userNotifications.slice(0, 20), unread });
 });
 
 app.put('/api/notifications/:notificationId/read', auth, (req, res) => {
@@ -698,14 +889,14 @@ app.put('/api/notifications/:notificationId/read', auth, (req, res) => {
   if (!notification) return res.status(404).json({ message: 'Notificação não encontrada.' });
   notification.read = true;
   writeDB(db);
-  res.json({ message: 'Notificação marcada como lida.' });
+  res.json({ message: 'Notificação marcada como lida.', notification });
 });
 
 app.get('/api/reports/events/excel', auth, (req, res) => {
   const db = readDB();
   const events = getUserEventsForReport(db, req.user.id);
   const report = buildExcelReport(events, req.user);
-  addNotification(db, req.user.id, 'Relatório gerado', 'O relatório de eventos em Excel foi gerado.', 'relatorio');
+  addNotification(db, req.user.id, 'Relatório Excel gerado', 'O relatório de eventos em Excel foi gerado com sucesso.', 'relatorio');
   writeDB(db);
   res.setHeader('Content-Type', 'application/vnd.ms-excel; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="KONECT_relatorio_eventos.xls"');
@@ -716,7 +907,7 @@ app.get('/api/reports/events/pdf', auth, (req, res) => {
   const db = readDB();
   const events = getUserEventsForReport(db, req.user.id);
   const report = buildPdfReport(events, req.user);
-  addNotification(db, req.user.id, 'Relatório gerado', 'O relatório de eventos em PDF foi gerado.', 'relatorio');
+  addNotification(db, req.user.id, 'Relatório PDF gerado', 'O relatório de eventos em PDF foi gerado com sucesso.', 'relatorio');
   writeDB(db);
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', 'attachment; filename="KONECT_relatorio_eventos.pdf"');

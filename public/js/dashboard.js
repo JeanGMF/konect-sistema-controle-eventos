@@ -2,6 +2,7 @@ let events = [];
 let notifications = [];
 let selectedEventId = null;
 let activeTab = 'guests';
+const PHONE_ERROR_MESSAGE = 'O telefone deve conter apenas números e ter entre 10 e 11 dígitos.';
 
 const currency = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -54,9 +55,12 @@ function renderNotifications(unread = 0) {
 
   container.innerHTML = `
     <p class="event-meta">${unread} notificação(ões) não lida(s).</p>
-    ${notifications.slice(0, 5).map((notification) => `
+    ${notifications.map((notification) => `
       <article class="notification-item ${notification.read ? '' : 'unread'}">
-        <strong>${escapeHtml(notification.title)}</strong>
+        <div class="notification-header">
+          <strong>${escapeHtml(notification.title)}</strong>
+          <span class="notification-status">${notification.read ? 'Lida' : 'Não lida'}</span>
+        </div>
         <span>${escapeHtml(notification.message)}</span>
         <small>${formatDateTime(notification.createdAt)}</small>
         ${notification.read ? '' : `<button type="button" class="text-button" onclick="markNotificationRead('${notification.id}')">Marcar como lida</button>`}
@@ -195,7 +199,7 @@ function renderGuests(event) {
     <form class="item-form participants-form" data-form="guests">
       <input name="name" placeholder="Nome do participante" required>
       <input name="email" type="email" placeholder="E-mail">
-      <input name="phone" placeholder="Telefone">
+      <input name="phone" type="tel" inputmode="numeric" pattern="[0-9]{10,11}" maxlength="11" placeholder="Telefone" required>
       <input type="hidden" name="status" value="Confirmado">
       <button ${isFull ? 'disabled' : ''}>${isFull ? 'Evento lotado' : 'Inscrever participante'}</button>
     </form>
@@ -313,12 +317,29 @@ function participantActions(guest) {
 function bindTabForms(event) {
   const form = document.querySelector('[data-form]');
   if (!form) return;
+  const phoneInput = form.querySelector('input[name="phone"]');
+
+  if (form.dataset.form === 'guests' && phoneInput) {
+    phoneInput.addEventListener('input', () => {
+      phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 11);
+      phoneInput.setCustomValidity('');
+    });
+  }
 
   form.addEventListener('submit', async (submitEvent) => {
     submitEvent.preventDefault();
     const collection = form.dataset.form;
     const body = formDataToObject(form);
     if (body.done === 'on') body.done = true;
+
+    if (collection === 'guests' && !isValidParticipantPhone(body.phone)) {
+      phoneInput?.setCustomValidity(PHONE_ERROR_MESSAGE);
+      phoneInput?.reportValidity();
+      showTabMessage(PHONE_ERROR_MESSAGE, true);
+      return;
+    }
+
+    phoneInput?.setCustomValidity('');
 
     try {
       await API.request(`/api/events/${event.id}/${collection}`, {
@@ -334,6 +355,10 @@ function bindTabForms(event) {
       showTabMessage(error.message, true);
     }
   });
+}
+
+function isValidParticipantPhone(phone) {
+  return /^\d{10,11}$/.test(String(phone || ''));
 }
 
 function showTabMessage(text, isError = false) {
@@ -375,6 +400,7 @@ window.deleteEvent = async function deleteEvent(eventId) {
   await API.request(`/api/events/${eventId}`, { method: 'DELETE' });
   if (selectedEventId === eventId) selectedEventId = null;
   await loadEvents();
+  await loadNotifications();
 };
 
 window.deleteNested = async function deleteNested(collection, itemId) {

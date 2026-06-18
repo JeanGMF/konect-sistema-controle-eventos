@@ -571,6 +571,23 @@ footer {
   background: #fff;
 }
 
+.notification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.notification-status {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .notification-item.unread {
   border-color: rgba(124, 58, 237, 0.42);
   background: #f5f3ff;
@@ -742,4 +759,3 @@ th {
 footer {
   color: var(--primary-dark);
 }
-
