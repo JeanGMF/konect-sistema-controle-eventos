@@ -562,6 +562,31 @@ footer {
   gap: 10px;
 }
 
+.notifications-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.notifications-actions .event-meta {
+  margin: 0;
+}
+
+.clear-notifications-btn {
+  width: auto;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+}
+
+.clear-notifications-btn:hover {
+  background: var(--primary-dark);
+}
+
 .notification-item {
   display: grid;
   gap: 4px;

@@ -892,6 +892,15 @@ app.put('/api/notifications/:notificationId/read', auth, (req, res) => {
   res.json({ message: 'Notificação marcada como lida.', notification });
 });
 
+app.delete('/api/notifications', auth, (req, res) => {
+  const db = readDB();
+  const before = db.notifications.length;
+  db.notifications = db.notifications.filter((notification) => notification.userId !== req.user.id);
+  const removed = before - db.notifications.length;
+  writeDB(db);
+  res.json({ message: 'Notificações limpas com sucesso.', removed });
+});
+
 app.get('/api/reports/events/excel', auth, (req, res) => {
   const db = readDB();
   const events = getUserEventsForReport(db, req.user.id);

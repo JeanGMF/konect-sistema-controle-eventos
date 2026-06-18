@@ -54,7 +54,10 @@ function renderNotifications(unread = 0) {
   }
 
   container.innerHTML = `
-    <p class="event-meta">${unread} notificação(ões) não lida(s).</p>
+    <div class="notifications-actions">
+      <p class="event-meta">${unread} notificação(ões) não lida(s).</p>
+      <button type="button" class="clear-notifications-btn" onclick="clearNotifications()">Limpar notificações</button>
+    </div>
     ${notifications.map((notification) => `
       <article class="notification-item ${notification.read ? '' : 'unread'}">
         <div class="notification-header">
@@ -450,6 +453,15 @@ window.toggleTask = async function toggleTask(itemId) {
 window.markNotificationRead = async function markNotificationRead(notificationId) {
   try {
     await API.request(`/api/notifications/${notificationId}/read`, { method: 'PUT' });
+    await loadNotifications();
+  } catch (error) {
+    showMessage('reportMessage', error.message, true);
+  }
+};
+
+window.clearNotifications = async function clearNotifications() {
+  try {
+    await API.request('/api/notifications', { method: 'DELETE' });
     await loadNotifications();
   } catch (error) {
     showMessage('reportMessage', error.message, true);
